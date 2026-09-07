@@ -1,0 +1,23 @@
+[project]
+name = "droidcam-rtsp-ingestor"
+version = "0.1.0"
+description = "Ingest a DroidCam RTSP/MJPEG stream and forward frames to a VLM inference server, streaming responses to a web UI."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "httpx>=0.27",
+    "opencv-python-headless>=4.10",
+    "numpy>=2.1",
+]
+
+[project.scripts]
+droidcam-ingestor = "droidcam_ingestor.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["droidcam_ingestor"]

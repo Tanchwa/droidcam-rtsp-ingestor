@@ -1,0 +1,23 @@
+# Version control
+.git
+.gitignore
+
+# Python caches / build artifacts
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local env / secrets
+.env
+
+# CI / docs / editor cruft
+.github/
+README.md
+.idea/
+.vscode/
