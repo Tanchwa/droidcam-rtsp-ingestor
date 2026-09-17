@@ -16,6 +16,8 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: droidcam-gateway
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
   labels:
     app.kubernetes.io/part-of: droidcam-rtsp-ingestor
 spec:
