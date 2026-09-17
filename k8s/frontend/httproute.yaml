@@ -69,6 +69,42 @@ spec:
         - name: droidcam-frontend
           port: 8080
 ---
+# Port 80 -> 443 redirect.
+#
+# The Route above attaches only to the Gateway's `https` listener, which leaves
+# the `http` listener with zero routes attached -- agentgateway answers anything
+# arriving on port 80 with `404 route not found`. That bites every bare
+# `curl vlm-test.andrewsutliff.com` and every browser that tries HTTP first.
+#
+# This Route exists solely to redirect those to HTTPS. It carries no
+# backendRefs, so nothing is served in cleartext -- the proxy emits the redirect
+# itself and the connection never reaches the frontend.
+#
+# `requestRedirect.port` is intentionally omitted: per Gateway API the port is
+# then derived from `scheme`, giving 443 without hardcoding it.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: droidcam-frontend-https-redirect
+  labels:
+    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+spec:
+  parentRefs:
+    - name: droidcam-gateway
+      namespace: droidcam
+      sectionName: http
+  hostnames:
+    - vlm-test.andrewsutliff.com
+  rules:
+    - name: https-redirect
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
 # OPTIONAL. Only needed if WebSockets still get cut mid-session.
 #
 # `timeouts.request: 0s` above removes the per-request deadline, but the
