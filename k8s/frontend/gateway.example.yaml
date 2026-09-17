@@ -22,6 +22,21 @@ metadata:
     app.kubernetes.io/part-of: droidcam-rtsp-ingestor
 spec:
   gatewayClassName: agentgateway
+  # The AWS Load Balancer Controller defaults a provisioned Service to
+  # `scheme: internal`, which gives you an NLB on private RFC1918 addresses --
+  # unreachable from Cloudflare or anywhere else off-VPC. These annotations are
+  # propagated by the agentgateway control plane onto the Service it creates for
+  # this Gateway, and mirror what argocd-server already uses in this cluster.
+  #
+  # `subnets` is pinned explicitly because the VPC's public subnets are not
+  # tagged for ELB auto-discovery (kubernetes.io/role/elb=1). Replace the IDs if
+  # you move clusters, or add the tags and drop the annotation.
+  infrastructure:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+      service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-047477db1222b1051,subnet-00bdba6eabca58aaa,subnet-0c16a63c5c9cf8714
   listeners:
   - name: http
     protocol: HTTP
