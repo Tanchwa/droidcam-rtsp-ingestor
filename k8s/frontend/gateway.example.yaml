@@ -15,11 +15,11 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: droidcam-gateway
+  name: cellphone-camera-gateway
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   labels:
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 spec:
   gatewayClassName: agentgateway
   # The AWS Load Balancer Controller defaults a provisioned Service to

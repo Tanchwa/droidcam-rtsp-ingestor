@@ -52,7 +52,7 @@ wheels = [
 ]
 
 [[package]]
-name = "droidcam-frontend"
+name = "cellphone-camera-frontend"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

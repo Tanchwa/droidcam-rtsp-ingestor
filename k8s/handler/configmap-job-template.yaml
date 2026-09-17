@@ -7,40 +7,40 @@
 #
 # Placeholders the hook MUST fill:
 #   ${SESSION_ID}      from the caller's `x-llmd-session-id` header
-#   ${STREAM_URL}      from `x-droidcam-stream-url` / body `droidcam.stream_url`
+#   ${STREAM_URL}      from `x-cellphone-camera-stream-url` / body `cellphone-camera.stream_url`
 #   ${POOL_ENDPOINT}   the inference pool llm-d assigned this session to
-# Optional (fall back to droidcam-handler-defaults if the hook omits the
+# Optional (fall back to cellphone-camera-handler-defaults if the hook omits the
 # `env:` entry entirely -- do not substitute an empty string, that reads as
 # "unset" only for PROMPT and would set FRAME_INTERVAL to "" and crash):
-#   ${PROMPT}          body `droidcam.prompt`
-#   ${FRAME_INTERVAL}  body `droidcam.interval`
+#   ${PROMPT}          body `cellphone-camera.prompt`
+#   ${FRAME_INTERVAL}  body `cellphone-camera.interval`
 #
-# Name length: SESSION_ID is `droidcam-<uuid>` (45 chars). With the `handler-`
+# Name length: SESSION_ID is `cellphone-camera-<uuid>` (45 chars). With the `handler-`
 # prefix that is 53, and the Job adds a 6-char suffix to the pod name -- just
 # inside the 63-char DNS label limit. If you lengthen the prefix or the session
 # id format, check that budget again.
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: droidcam-handler-job-template
+  name: cellphone-camera-handler-job-template
   labels:
-    app.kubernetes.io/name: droidcam-handler
+    app.kubernetes.io/name: cellphone-camera-handler
     app.kubernetes.io/component: handler
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 data:
   job.yaml: |
     apiVersion: batch/v1
     kind: Job
     metadata:
       name: handler-${SESSION_ID}
-      namespace: droidcam
+      namespace: cellphone-camera
       labels:
-        app.kubernetes.io/name: droidcam-handler
+        app.kubernetes.io/name: cellphone-camera-handler
         app.kubernetes.io/component: handler
-        app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+        app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
         # Lets the hook (or a human) find and delete a session's handler:
-        #   kubectl -n droidcam delete job -l droidcam.io/session-id=<id>
-        droidcam.io/session-id: "${SESSION_ID}"
+        #   kubectl -n cellphone-camera delete job -l cellphone-camera.io/session-id=<id>
+        cellphone-camera.io/session-id: "${SESSION_ID}"
     spec:
       # Never retry. Exit 1 means the stream never produced a frame and exit 2
       # means the config is wrong -- neither gets better on a second attempt,
@@ -57,13 +57,13 @@ data:
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: droidcam-handler
+            app.kubernetes.io/name: cellphone-camera-handler
             app.kubernetes.io/component: handler
-            app.kubernetes.io/part-of: droidcam-rtsp-ingestor
-            droidcam.io/session-id: "${SESSION_ID}"
+            app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
+            cellphone-camera.io/session-id: "${SESSION_ID}"
         spec:
           restartPolicy: Never
-          serviceAccountName: droidcam-handler
+          serviceAccountName: cellphone-camera-handler
           # The handler talks to no Kubernetes API -- it reads a camera stream
           # and POSTs to a pool. It needs no token.
           automountServiceAccountToken: false
@@ -79,14 +79,14 @@ data:
             - name: handler
               # Pin to the SHA tag in production; `latest` here so the hook
               # keeps working after a merge to main without a template edit.
-              image: docker.io/tanchwa/droidcam-handler:latest
+              image: docker.io/tanchwa/cellphone-camera-handler:latest
               imagePullPolicy: IfNotPresent
               # No ports. Nothing connects to the handler; it only dials out.
               envFrom:
                 - configMapRef:
-                    name: droidcam-handler-defaults
+                    name: cellphone-camera-handler-defaults
                 - secretRef:
-                    name: droidcam-handler-secrets
+                    name: cellphone-camera-handler-secrets
                     optional: true
               # `env` beats `envFrom`, so these override the defaults above.
               env:

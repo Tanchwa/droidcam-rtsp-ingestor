@@ -1,4 +1,4 @@
-"""Handler entrypoint: sample the DroidCam stream into the inference pool.
+"""Handler entrypoint: sample the cellphone camera stream into the inference pool.
 
 Lifecycle is deliberately dumb, because this whole component is a POC stand-in
 for a real RTSP handler:
@@ -25,7 +25,7 @@ from .config import ConfigError, HandlerSettings, load
 from .pool import PoolClient
 from .rtsp import FrameGrabber, encode_jpeg
 
-log = logging.getLogger("droidcam.handler")
+log = logging.getLogger("cellphone-camera.handler")
 
 
 def _describe(settings: HandlerSettings) -> str:

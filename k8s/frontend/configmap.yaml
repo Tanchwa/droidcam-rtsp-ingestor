@@ -3,15 +3,15 @@
 # The frontend only ever talks to the llm-d router gateway -- there is no pool
 # address here, and no knowledge of the handler. Changing this ConfigMap does
 # NOT restart the Deployment; roll it yourself:
-#   kubectl -n droidcam rollout restart deploy/droidcam-frontend
+#   kubectl -n cellphone-camera rollout restart deploy/cellphone-camera-frontend
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: droidcam-frontend-config
+  name: cellphone-camera-frontend-config
   labels:
-    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/name: cellphone-camera-frontend
     app.kubernetes.io/component: frontend
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 data:
   # --- llm-d router gateway ---
   # Point this at your gateway. In-cluster Service form shown; use the public

@@ -8,11 +8,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: droidcam-handler-defaults
+  name: cellphone-camera-handler-defaults
   labels:
-    app.kubernetes.io/name: droidcam-handler
+    app.kubernetes.io/name: cellphone-camera-handler
     app.kubernetes.io/component: handler
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 data:
   # --- Pool request shape ---
   POOL_CHAT_PATH: "/v1/chat/completions"

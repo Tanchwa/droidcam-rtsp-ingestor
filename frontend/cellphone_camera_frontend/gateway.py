@@ -3,13 +3,13 @@
 THIS MODULE IS THE JOINT between the frontend and the llm-d router. One POST
 does double duty:
 
-  1. It carries the DroidCam address, so the router's gateway hook can
+  1. It carries the cellphone camera address, so the router's gateway hook can
      provision a handler for this session and inject that address into it.
   2. It stays open as the session's token response, so tokens the handler
      generates -- by submitting frames to the pool tagged with the same
      ``SESSION_HEADER`` -- come back down this connection to the browser.
 
-Note the frontend only ever passes the DroidCam address along as a value; it
+Note the frontend only ever passes the cellphone camera address along as a value; it
 never opens that stream. The handler is the only component that connects to it,
 which is why nothing here imports OpenCV.
 
@@ -17,7 +17,7 @@ The frontend never learns the handler's address and never contacts it. If your
 gateway wants the stream URL somewhere else (a different header, a body field,
 a routing path), change ``_headers``/``_build_trigger_payload`` here and
 nothing else in the frontend moves. The handler's mirror image of this contract
-lives in ``droidcam_handler/pool.py``.
+lives in ``cellphone_camera_handler/pool.py``.
 """
 
 from __future__ import annotations
@@ -31,19 +31,19 @@ import httpx
 
 from .config import Settings
 
-#: Must match ``SESSION_HEADER`` in droidcam_handler/pool.py.
+#: Must match ``SESSION_HEADER`` in cellphone_camera_handler/pool.py.
 SESSION_HEADER = "x-llmd-session-id"
 #: Distinguishes the frontend's provisioning trigger from the handler's frame
 #: traffic, so the hook provisions exactly one handler per session.
 ORIGIN_HEADER = "x-llmd-frame-source"
 ORIGIN_VALUE = "frontend-trigger"
-#: Where the hook reads the DroidCam address from.
-STREAM_URL_HEADER = "x-droidcam-stream-url"
-FRAME_INTERVAL_HEADER = "x-droidcam-frame-interval"
+#: Where the hook reads the cellphone camera address from.
+STREAM_URL_HEADER = "x-cellphone-camera-stream-url"
+FRAME_INTERVAL_HEADER = "x-cellphone-camera-frame-interval"
 
 
 def new_session_id() -> str:
-    return f"droidcam-{uuid.uuid4().hex[:12]}"
+    return f"cellphone-camera-{uuid.uuid4().hex[:12]}"
 
 
 @dataclass
@@ -94,15 +94,15 @@ class GatewayClient:
         """The request that provisions the handler and opens the token stream.
 
         Shaped like an ordinary chat completion so llm-d routes it to a pool
-        normally, with the handler's configuration hung off a ``droidcam``
-        extension object the hook reads. Everything under ``droidcam`` becomes
+        normally, with the handler's configuration hung off a ``cellphone-camera``
+        extension object the hook reads. Everything under ``cellphone-camera`` becomes
         env vars on the handler pod.
         """
         return {
             "model": self._settings.model,
             "stream": True,
             "session_id": session_id,
-            "droidcam": {
+            "cellphone-camera": {
                 "stream_url": stream_url,
                 "prompt": prompt,
                 "interval": interval,

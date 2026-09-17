@@ -3,13 +3,13 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: droidcam-frontend
+  name: cellphone-camera-frontend
   labels:
-    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/name: cellphone-camera-frontend
     app.kubernetes.io/component: frontend
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: droidcam-frontend
+      app.kubernetes.io/name: cellphone-camera-frontend

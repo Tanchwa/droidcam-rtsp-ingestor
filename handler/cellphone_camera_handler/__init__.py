@@ -1,4 +1,4 @@
-"""Short-lived DroidCam RTSP handler.
+"""Short-lived cellphone camera RTSP handler.
 
 Created by the llm-d router's gateway hook when a session starts, reads its
 whole configuration from the environment, feeds frames into the assigned

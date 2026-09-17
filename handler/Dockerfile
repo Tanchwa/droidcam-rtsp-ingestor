@@ -42,4 +42,4 @@ USER app
 # No port: the handler is a worker. Nothing connects to it; it dials out to the
 # inference pool and exits. SESSION_ID / STREAM_URL / POOL_ENDPOINT are
 # injected per session by the llm-d gateway hook.
-ENTRYPOINT ["droidcam-handler"]
+ENTRYPOINT ["cellphone-camera-handler"]

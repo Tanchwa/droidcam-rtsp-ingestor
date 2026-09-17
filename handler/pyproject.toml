@@ -1,7 +1,7 @@
 [project]
-name = "droidcam-handler"
+name = "cellphone-camera-handler"
 version = "0.1.0"
-description = "Short-lived RTSP handler: samples a DroidCam stream into an llm-d inference pool."
+description = "Short-lived RTSP handler: samples a cellphone camera stream into an llm-d inference pool."
 requires-python = ">=3.13"
 dependencies = [
     "httpx>=0.27",
@@ -10,11 +10,11 @@ dependencies = [
 ]
 
 [project.scripts]
-droidcam-handler = "droidcam_handler.worker:main"
+cellphone-camera-handler = "cellphone_camera_handler.worker:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["droidcam_handler"]
+packages = ["cellphone_camera_handler"]

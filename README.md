@@ -1,6 +1,6 @@
-# droidcam-rtsp-ingestor
+# cellphone-camera-rtsp-ingestor
 
-Two components that let a browser run VLM inference over a **DroidCam**
+Two components that let a browser run VLM inference over a **cellphone camera**
 RTSP/MJPEG stream, routed through the **llm-d** router gateway.
 
 ```
@@ -9,7 +9,7 @@ RTSP/MJPEG stream, routed through the **llm-d** router gateway.
                      │                          │ gateway hook provisions
                      └──── tokens ──────────────┤ a handler for the session
                                                 ▼
-                        DroidCam ──frames──► handler ──► inference pool
+                cellphone camera ──frames──► handler ──► inference pool
 ```
 
 | | `frontend/` | `handler/` |
@@ -17,14 +17,14 @@ RTSP/MJPEG stream, routed through the **llm-d** router gateway.
 | Lifetime | long-lived Deployment | **short-lived**, one per session |
 | Created by | you (manifest) | the llm-d router's gateway hook |
 | Listens on | `:8080` (HTTP + WebSocket) | nothing — it only dials out |
-| Talks to | the gateway, only | the DroidCam stream + its assigned pool |
+| Talks to | the gateway, only | the cellphone camera stream + its assigned pool |
 | Deps | FastAPI, uvicorn, httpx | OpenCV, numpy, httpx |
-| Image | `<user>/droidcam-frontend` | `<user>/droidcam-handler` |
+| Image | `<user>/cellphone-camera-frontend` | `<user>/cellphone-camera-handler` |
 
 **Only the handler ever touches the camera stream.** The frontend takes the
-DroidCam URL from the client and passes it along as a value in its POST; it
-never opens that connection, which is why its image has no OpenCV in it. The
-only data the frontend receives is the token response to its own POST.
+cellphone camera URL from the client and passes it along as a value in its
+POST; it never opens that connection, which is why its image has no OpenCV in
+it. The only data the frontend receives is the token response to its own POST.
 
 They are separate uv projects with separate lockfiles and Dockerfiles, built
 from separate contexts. Neither imports the other — the only thing they share
@@ -35,16 +35,16 @@ is the wire contract described below.
 One POST does double duty. The frontend sends it when the user hits **Start
 inference**; it provisions the handler *and* stays open as the token stream.
 
-1. **Frontend → gateway** (`frontend/droidcam_frontend/gateway.py`) — a normal
+1. **Frontend → gateway** (`frontend/cellphone_camera_frontend/gateway.py`) — a normal
    chat completion with `stream: true`, plus:
-   - header `x-llmd-session-id: droidcam-<uuid>` — the session key
+   - header `x-llmd-session-id: cellphone-camera-<uuid>` — the session key
    - header `x-llmd-frame-source: frontend-trigger` — "this is a trigger, not frame traffic"
-   - header `x-droidcam-stream-url` and body `droidcam.{stream_url,prompt,interval}` — what the hook injects into the handler pod
+   - header `x-cellphone-camera-stream-url` and body `cellphone-camera.{stream_url,prompt,interval}` — what the hook injects into the handler pod
 2. **Gateway hook** (not in this repo) — reads those, creates a handler with
    `SESSION_ID`, `STREAM_URL`, `POOL_ENDPOINT`, `PROMPT`, `FRAME_INTERVAL`.
-3. **Handler → pool** (`handler/droidcam_handler/pool.py`) — one request per
+3. **Handler → pool** (`handler/cellphone_camera_handler/pool.py`) — one request per
    sampled frame, carrying the same `x-llmd-session-id` and
-   `x-llmd-frame-source: droidcam-handler`, so the gateway joins the output onto
+   `x-llmd-frame-source: cellphone-camera-handler`, so the gateway joins the output onto
    the caller's open stream from step 1.
 4. **Gateway → frontend → browser** — tokens arrive on the step-1 response; the
    frontend splits them into per-frame blocks and relays them over the
@@ -84,13 +84,13 @@ Each component is its own uv project, so `uv run` from inside its directory:
 # terminal 1 — the UI
 cd frontend
 cp .env.example .env          # point GATEWAY_ENDPOINT at your gateway
-uv run droidcam-frontend      # http://localhost:8080
+uv run cellphone-camera-frontend      # http://localhost:8080
 ```
 
-Then open the UI, enter the DroidCam URL, and hit **Start inference**.
+Then open the UI, enter the cellphone camera URL, and hit **Start inference**.
 
 - MJPEG: `http://<phone-ip>:4747/video`
-- RTSP (DroidCamX): `rtsp://<phone-ip>:4747/`
+- RTSP (app-dependent): `rtsp://<phone-ip>:4747/`
 
 `GET /healthz` returns the resolved gateway URL for a connectivity sanity check.
 
@@ -103,7 +103,7 @@ SESSION_ID=local-dev \
 STREAM_URL=http://192.168.1.42:4747/video \
 POOL_ENDPOINT=http://vlm-service.default.svc.cluster.local:8000 \
 MAX_FRAMES=3 \
-  uv run droidcam-handler
+  uv run cellphone-camera-handler
 ```
 
 See `frontend/.env.example` and `handler/.env.example` for every variable.
@@ -111,8 +111,8 @@ See `frontend/.env.example` and `handler/.env.example` for every variable.
 ## Build
 
 ```bash
-docker build -t droidcam-frontend ./frontend
-docker build -t droidcam-handler  ./handler
+docker build -t cellphone-camera-frontend ./frontend
+docker build -t cellphone-camera-handler  ./handler
 ```
 
 Keep the frontend's `RESPONSE_TIMEOUT` (default 600s) above the handler's

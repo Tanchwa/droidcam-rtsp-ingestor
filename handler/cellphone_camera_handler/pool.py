@@ -26,7 +26,7 @@ SESSION_HEADER = "x-llmd-session-id"
 #: Marks the request as handler-originated frame traffic rather than a fresh
 #: user request, so the hook does not try to provision a second handler.
 ORIGIN_HEADER = "x-llmd-frame-source"
-ORIGIN_VALUE = "droidcam-handler"
+ORIGIN_VALUE = "cellphone-camera-handler"
 
 
 class PoolClient:

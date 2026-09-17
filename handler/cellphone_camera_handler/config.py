@@ -2,7 +2,7 @@
 
 The handler is provisioned by the llm-d router's gateway hook, so every value
 below arrives as an env var on the pod spec -- there is no config file, no API
-the handler listens on, and no Kubernetes client. ``STREAM_URL`` (the DroidCam
+the handler listens on, and no Kubernetes client. ``STREAM_URL`` (the cellphone camera
 address the user typed into the UI) and ``POOL_ENDPOINT`` (the inference pool
 llm-d assigned the session to) are the two the hook must always inject.
 """
@@ -35,7 +35,7 @@ class HandlerSettings:
     # Correlates this handler's frame submissions with the caller's open
     # response stream on the gateway. Must match the id the frontend sent.
     session_id: str = field(default_factory=lambda: _required("SESSION_ID"))
-    # The DroidCam MJPEG/RTSP address the user entered in the UI.
+    # The cellphone camera MJPEG/RTSP address the user entered in the UI.
     stream_url: str = field(default_factory=lambda: _required("STREAM_URL"))
     # The specific inference pool endpoint llm-d assigned this session to.
     pool_endpoint: str = field(default_factory=lambda: _required("POOL_ENDPOINT"))

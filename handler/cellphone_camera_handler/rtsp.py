@@ -1,8 +1,8 @@
-"""RTSP / DroidCam frame capture.
+"""RTSP / cellphone camera frame capture.
 
-DroidCam exposes a few stream URLs depending on the app/mode:
+Cellphone camera apps expose a few stream URLs depending on the app/mode:
   - MJPEG over HTTP:  http://<phone-ip>:4747/video  (or /mjpegfeed)
-  - RTSP (DroidCamX):  rtsp://<phone-ip>:4747/...
+  - RTSP (app-dependent):  rtsp://<phone-ip>:4747/...
 
 OpenCV's ``VideoCapture`` handles all of them. RTSP in particular buffers
 frames, so a continuous reader thread drains the buffer and keeps only the most

@@ -1,30 +1,30 @@
 # Two unrelated identities live here. Do not conflate them:
 #
-#   droidcam-handler            -- the handler pods themselves. Deliberately
+#   cellphone-camera-handler            -- the handler pods themselves. Deliberately
 #                                  has NO permissions; the pod spec also sets
 #                                  automountServiceAccountToken: false. The
 #                                  handler never touches the Kubernetes API.
 #
-#   droidcam-handler-provisioner -- the permission set the llm-d gateway hook
+#   cellphone-camera-handler-provisioner -- the permission set the llm-d gateway hook
 #                                  needs in THIS namespace to read the job
 #                                  template and create/reap handler Jobs.
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: droidcam-handler
+  name: cellphone-camera-handler
   labels:
-    app.kubernetes.io/name: droidcam-handler
+    app.kubernetes.io/name: cellphone-camera-handler
     app.kubernetes.io/component: handler
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 automountServiceAccountToken: false
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: droidcam-handler-provisioner
+  name: cellphone-camera-handler-provisioner
   labels:
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 rules:
   # Read the Job template and the shared defaults.
   - apiGroups: [""]
@@ -46,7 +46,7 @@ rules:
     resources: ["serviceaccounts"]
     verbs: ["get"]
 ---
-# Grants the gateway hook those rights in the droidcam namespace only.
+# Grants the gateway hook those rights in the cellphone-camera namespace only.
 #
 # EDIT THE SUBJECT. `llm-d-gateway-hook` / `llm-d` are placeholders -- set them
 # to whatever ServiceAccount your router's hook actually runs as. Find it with:
@@ -54,13 +54,13 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: droidcam-handler-provisioner
+  name: cellphone-camera-handler-provisioner
   labels:
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: droidcam-handler-provisioner
+  name: cellphone-camera-handler-provisioner
 subjects:
   - kind: ServiceAccount
     name: llm-d-gateway-hook

@@ -74,7 +74,7 @@ If the gateway needs auth, create the Secret out of band so no token lands in
 git:
 
 ```bash
-kubectl -n droidcam create secret generic droidcam-frontend-secrets \
+kubectl -n cellphone-camera create secret generic cellphone-camera-frontend-secrets \
   --from-literal=API_KEY='sk-...'
 ```
 
@@ -86,8 +86,8 @@ unauthenticated gateway.
 CI tags every build `latest` and `sha-<full-commit-sha>`. Pin the real one:
 
 ```bash
-kubectl -n droidcam set image deploy/droidcam-frontend \
-  frontend=YOUR_DOCKERHUB_USERNAME/droidcam-frontend:sha-$(git rev-parse HEAD)
+kubectl -n cellphone-camera set image deploy/cellphone-camera-frontend \
+  frontend=YOUR_DOCKERHUB_USERNAME/cellphone-camera-frontend:sha-$(git rev-parse HEAD)
 ```
 
 The handler's tag lives in the ConfigMap template, so it changes by editing
@@ -124,8 +124,8 @@ there is a ready-to-uncomment example at the bottom of `frontend/httproute.yaml`
 ## Verify
 
 ```bash
-kubectl -n droidcam rollout status deploy/droidcam-frontend
-kubectl -n droidcam port-forward svc/droidcam-frontend 8080:80
+kubectl -n cellphone-camera rollout status deploy/cellphone-camera-frontend
+kubectl -n cellphone-camera port-forward svc/cellphone-camera-frontend 8080:80
 curl -s localhost:8080/healthz    # echoes the resolved gateway URL
 ```
 
@@ -139,7 +139,7 @@ Confirm the hook's RBAC actually works:
 
 ```bash
 kubectl auth can-i create jobs \
-  --as=system:serviceaccount:llm-d:llm-d-gateway-hook -n droidcam
+  --as=system:serviceaccount:llm-d:llm-d-gateway-hook -n cellphone-camera
 ```
 
 ## Debug a session
@@ -147,9 +147,9 @@ kubectl auth can-i create jobs \
 Handler Jobs are labelled with their session id:
 
 ```bash
-kubectl -n droidcam get jobs -l app.kubernetes.io/name=droidcam-handler
-kubectl -n droidcam logs -l droidcam.io/session-id=<session-id> --tail=100
-kubectl -n droidcam delete job -l droidcam.io/session-id=<session-id>
+kubectl -n cellphone-camera get jobs -l app.kubernetes.io/name=cellphone-camera-handler
+kubectl -n cellphone-camera logs -l cellphone-camera.io/session-id=<session-id> --tail=100
+kubectl -n cellphone-camera delete job -l cellphone-camera.io/session-id=<session-id>
 ```
 
 Exit codes: `0` completed, `1` the stream never produced frames, `2`

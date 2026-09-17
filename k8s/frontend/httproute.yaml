@@ -19,17 +19,17 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: droidcam-frontend
+  name: cellphone-camera-frontend
   annotations:
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
   labels:
-    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/name: cellphone-camera-frontend
     app.kubernetes.io/component: frontend
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 spec:
   parentRefs:
-    - name: droidcam-gateway
-      namespace: droidcam
+    - name: cellphone-camera-gateway
+      namespace: cellphone-camera
       sectionName: https
     # Shared-proxy alternative (option (a) above) -- use INSTEAD of the above:
     # - name: agentgateway-proxy
@@ -54,7 +54,7 @@ spec:
       timeouts:
         request: 0s
       backendRefs:
-        - name: droidcam-frontend
+        - name: cellphone-camera-frontend
           port: 8080
 
     # UI, static assets, /healthz, /api/defaults. All short request/response.
@@ -66,7 +66,7 @@ spec:
       timeouts:
         request: 30s
       backendRefs:
-        - name: droidcam-frontend
+        - name: cellphone-camera-frontend
           port: 8080
 ---
 # Port 80 -> 443 redirect.
@@ -85,15 +85,15 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: droidcam-frontend-https-redirect
+  name: cellphone-camera-frontend-https-redirect
   labels:
-    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/name: cellphone-camera-frontend
     app.kubernetes.io/component: frontend
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 spec:
   parentRefs:
-    - name: droidcam-gateway
-      namespace: droidcam
+    - name: cellphone-camera-gateway
+      namespace: cellphone-camera
       sectionName: http
   hostnames:
     - vlm-test.andrewsutliff.com
@@ -121,13 +121,13 @@ spec:
 # apiVersion: agentgateway.dev/v1alpha1
 # kind: AgentgatewayPolicy
 # metadata:
-#   name: droidcam-frontend-idle
-#   namespace: droidcam
+#   name: cellphone-camera-frontend-idle
+#   namespace: cellphone-camera
 # spec:
 #   targetRefs:
 #     - group: gateway.networking.k8s.io
 #       kind: Gateway
-#       name: droidcam-gateway
+#       name: cellphone-camera-gateway
 #   frontend:
 #     http:
 #       http1IdleTimeout: 900s

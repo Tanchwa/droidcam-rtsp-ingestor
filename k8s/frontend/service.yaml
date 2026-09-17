@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: droidcam-frontend
+  name: cellphone-camera-frontend
   labels:
-    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/name: cellphone-camera-frontend
     app.kubernetes.io/component: frontend
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/name: cellphone-camera-frontend
   ports:
     - name: http
       port: 8080

@@ -37,4 +37,4 @@ ENV PATH="/app/.venv/bin:$PATH" \
 USER app
 EXPOSE 8080
 
-CMD ["droidcam-frontend"]
+CMD ["cellphone-camera-frontend"]

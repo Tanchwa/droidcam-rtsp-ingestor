@@ -27,7 +27,7 @@ class Settings:
     # Optional bearer token if the gateway requires auth.
     api_key: str = _env("API_KEY", "")
     # How long the token response to our POST may stay open. This bounds the
-    # gateway response only -- the frontend never opens the DroidCam stream
+    # gateway response only -- the frontend never opens the cellphone camera stream
     # itself. Keep it comfortably above the handler's MAX_SESSION_SECONDS, or
     # tokens stop reaching the browser while the handler is still working.
     response_timeout: float = float(_env("RESPONSE_TIMEOUT", "600"))

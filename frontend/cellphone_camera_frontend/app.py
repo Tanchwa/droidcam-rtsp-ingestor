@@ -3,15 +3,15 @@
     Browser --ws--> this server --POST(SSE)--> llm-d router gateway
                                                     | hook provisions
                                                     v
-                              DroidCam --> handler --> inference pool
+                      cellphone camera --> handler --> inference pool
 
-The browser sends the DroidCam URL + prompt over the WebSocket. This server
-passes that URL along in one request to the gateway, which both provisions the
-handler for the session and carries the model's tokens back.
+The browser sends the cellphone camera URL + prompt over the WebSocket. This
+server passes that URL along in one request to the gateway, which both
+provisions the handler for the session and carries the model's tokens back.
 
-This process never connects to the DroidCam URL -- it only relays it. Frame
-capture happens entirely in the handler workload, so there is no OpenCV here,
-and this process never contacts the handler either.
+This process never connects to the cellphone camera URL -- it only relays it.
+Frame capture happens entirely in the handler workload, so there is no OpenCV
+here, and this process never contacts the handler either.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from .gateway import FrameEnd, FrameStart, GatewayClient, Token, new_session_id
 
 STATIC_DIR = Path(__file__).parent / "static"
 
-app = FastAPI(title="DroidCam -> llm-d VLM Frontend")
+app = FastAPI(title="Cellphone Camera -> llm-d VLM Frontend")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -90,7 +90,7 @@ async def inference_ws(ws: WebSocket) -> None:
     async def teardown() -> None:
         """Close the gateway token response. Note this does NOT stop the handler.
 
-        Nothing can reach the handler pod, so it keeps sampling the DroidCam
+        Nothing can reach the handler pod, so it keeps sampling the cellphone camera
         stream until one of its own backstops (MAX_SESSION_SECONDS /
         MAX_FRAMES / IDLE_TIMEOUT) trips. Closing here only stops tokens
         reaching this browser.

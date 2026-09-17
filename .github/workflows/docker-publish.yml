@@ -27,9 +27,9 @@ jobs:
       matrix:
         include:
           - component: frontend
-            image: droidcam-frontend
+            image: cellphone-camera-frontend
           - component: handler
-            image: droidcam-handler
+            image: cellphone-camera-handler
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

@@ -1,20 +1,20 @@
 # The long-lived half of the system: serves the UI and relays tokens over a
-# WebSocket. It never opens the DroidCam stream, so it needs no camera access,
+# WebSocket. It never opens the cellphone camera stream, so it needs no camera access,
 # no OpenCV, and no special egress beyond reaching the llm-d gateway.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: droidcam-frontend
+  name: cellphone-camera-frontend
   labels:
-    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/name: cellphone-camera-frontend
     app.kubernetes.io/component: frontend
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 spec:
   replicas: 2
   revisionHistoryLimit: 3
   selector:
     matchLabels:
-      app.kubernetes.io/name: droidcam-frontend
+      app.kubernetes.io/name: cellphone-camera-frontend
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -23,9 +23,9 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: droidcam-frontend
+        app.kubernetes.io/name: cellphone-camera-frontend
         app.kubernetes.io/component: frontend
-        app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+        app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
     spec:
       # Each WebSocket session lives entirely in one pod's memory, so an
       # evicted pod kills whatever sessions it was relaying. Give in-flight
@@ -48,15 +48,15 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              app.kubernetes.io/name: droidcam-frontend
+              app.kubernetes.io/name: cellphone-camera-frontend
       containers:
         - name: frontend
           # Published by .github/workflows/docker-publish.yml on every push to
           # main, tagged `latest` and `sha-<full-commit-sha>`. Pin to the SHA
           # tag in anything you care about:
-          #   kubectl -n droidcam set image deploy/droidcam-frontend \
-          #     frontend=YOUR_DOCKERHUB_USERNAME/droidcam-frontend:sha-<sha>
-          image: docker.io/tanchwa/droidcam-frontend:latest
+          #   kubectl -n cellphone-camera set image deploy/cellphone-camera-frontend \
+          #     frontend=YOUR_DOCKERHUB_USERNAME/cellphone-camera-frontend:sha-<sha>
+          image: docker.io/tanchwa/cellphone-camera-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -64,9 +64,9 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: droidcam-frontend-config
+                name: cellphone-camera-frontend-config
             - secretRef:
-                name: droidcam-frontend-secrets
+                name: cellphone-camera-frontend-secrets
                 # Missing Secret is fine -- API_KEY defaults to "" (no auth).
                 optional: true
           # /healthz is a pure local check: it returns the resolved gateway URL
