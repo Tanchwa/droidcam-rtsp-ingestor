@@ -79,7 +79,7 @@ data:
             - name: handler
               # Pin to the SHA tag in production; `latest` here so the hook
               # keeps working after a merge to main without a template edit.
-              image: docker.io/YOUR_DOCKERHUB_USERNAME/droidcam-handler:latest
+              image: docker.io/tanchwa/droidcam-handler:latest
               imagePullPolicy: IfNotPresent
               # No ports. Nothing connects to the handler; it only dials out.
               envFrom:
