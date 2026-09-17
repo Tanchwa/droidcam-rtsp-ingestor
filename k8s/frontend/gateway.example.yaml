@@ -16,16 +16,23 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: droidcam-gateway
-  namespace: droidcam
   labels:
     app.kubernetes.io/part-of: droidcam-rtsp-ingestor
 spec:
   gatewayClassName: agentgateway
   listeners:
-    - name: http
-      protocol: HTTP
-      port: 80
-      hostname: droidcam.example.com
-      allowedRoutes:
-        namespaces:
-          from: Same
+  - name: http
+    protocol: HTTP
+    port: 80
+    hostname: "vlm-test.andrewsutliff.com"
+    allowedRoutes:
+      namespaces:
+        from: Same
+  - name: https
+    protocol: HTTPS
+    port: 443
+    hostname: "vlm-test.andrewsutliff.com"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: vlm-test-andrewsutliff-com-tls

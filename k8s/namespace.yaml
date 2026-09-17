@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: droidcam
-  labels:
-    app.kubernetes.io/part-of: droidcam-rtsp-ingestor

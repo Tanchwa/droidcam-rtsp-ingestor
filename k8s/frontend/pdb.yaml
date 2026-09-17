@@ -4,7 +4,6 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: droidcam-frontend
-  namespace: droidcam
   labels:
     app.kubernetes.io/name: droidcam-frontend
     app.kubernetes.io/component: frontend

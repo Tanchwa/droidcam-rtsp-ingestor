@@ -5,7 +5,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: droidcam-frontend
-  namespace: droidcam
   labels:
     app.kubernetes.io/name: droidcam-frontend
     app.kubernetes.io/component: frontend
