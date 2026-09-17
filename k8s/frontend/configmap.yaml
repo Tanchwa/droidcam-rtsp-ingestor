@@ -16,7 +16,7 @@ data:
   # --- llm-d router gateway ---
   # Point this at your gateway. In-cluster Service form shown; use the public
   # Envoy/gateway hostname instead if the router lives outside this cluster.
-  GATEWAY_ENDPOINT: "http://llm-d-inference-gateway.llm-d.svc.cluster.local:80"
+  GATEWAY_ENDPOINT: "http://llm-d-inference-gateway.llm-d-quickstart.svc.cluster.local:80"
   GATEWAY_CHAT_PATH: "/v1/chat/completions"
   MODEL: "Qwen/Qwen3-VL-2B-Instruct"
 
