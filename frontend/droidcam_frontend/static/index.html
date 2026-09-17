@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DroidCam → VLM Inference</title>
+  <title>DroidCam → llm-d VLM Inference</title>
   <style>
     :root { --bg:#0f1117; --panel:#1a1d27; --border:#2a2e3b; --text:#e6e8ee; --muted:#8b90a0; --accent:#4f8cff; --accent-stop:#ff5c5c; --ok:#3ddc84; }
     * { box-sizing: border-box; }
@@ -37,12 +37,14 @@
     @keyframes blink { 50% { opacity:0; } }
     .log-err { color:var(--accent-stop); }
     .empty { color:var(--muted); font-style:italic; }
+    .note { color:var(--muted); font-size:12px; margin:14px 0 0; }
+    .note code { font-size:11px; background:#0b0d13; border:1px solid var(--border); border-radius:4px; padding:1px 4px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>DroidCam → VLM Inference</h1>
-    <p class="sub">Point at a DroidCam RTSP/MJPEG stream; each sampled frame is sent to the VLM inference server and its response streams back live.</p>
+    <h1>DroidCam → llm-d VLM Inference</h1>
+    <p class="sub">Point at a DroidCam RTSP/MJPEG stream. Hitting go asks the llm-d router to stand up a handler for the session; the handler samples frames into the assigned inference pool and the responses stream back here live.</p>
 
     <div class="panel">
       <div class="field">
@@ -69,13 +71,21 @@
       </div>
     </div>
 
+    <p class="note" id="session"></p>
+
     <div id="output"><span class="empty">Responses will appear here…</span></div>
+
+    <p class="note">Stop just closes this browser’s token feed. The handler is
+    what reads the camera stream, and it is not reachable from here, so it
+    exits on its own backstop (<code>MAX_SESSION_SECONDS</code> /
+    <code>MAX_FRAMES</code> / <code>IDLE_TIMEOUT</code>).</p>
   </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
     const startBtn = $("start"), stopBtn = $("stop");
     const dot = $("dot"), statusText = $("statusText"), output = $("output");
+    const sessionEl = $("session");
     let ws = null, current = null, emptied = false;
 
     function setStatus(text, kind) {
@@ -132,7 +142,10 @@
       };
       ws.onmessage = (ev) => {
         const m = JSON.parse(ev.data);
-        if (m.type === "status") setStatus(m.message, "live");
+        if (m.type === "status") {
+          setStatus(m.message, "live");
+          if (m.session_id) sessionEl.textContent = "session " + m.session_id;
+        }
         else if (m.type === "frame_start") newResponse(m.index);
         else if (m.type === "token") appendToken(m.text);
         else if (m.type === "frame_end") { if (current) current.el.classList.remove("cur"); }

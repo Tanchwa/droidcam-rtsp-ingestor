@@ -35,11 +35,11 @@ WORKDIR /app
 COPY --from=builder --chown=app:app /app /app
 
 ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1 \
-    HOST=0.0.0.0 \
-    PORT=8080
+    PYTHONUNBUFFERED=1
 
 USER app
-EXPOSE 8080
 
-CMD ["droidcam-ingestor"]
+# No port: the handler is a worker. Nothing connects to it; it dials out to the
+# inference pool and exits. SESSION_ID / STREAM_URL / POOL_ENDPOINT are
+# injected per session by the llm-d gateway hook.
+ENTRYPOINT ["droidcam-handler"]

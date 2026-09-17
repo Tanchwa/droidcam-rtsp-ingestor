@@ -1,0 +1,19 @@
+# ClusterIP only. External traffic arrives via the HTTPRoute in httproute.yaml.
+apiVersion: v1
+kind: Service
+metadata:
+  name: droidcam-frontend
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: droidcam-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

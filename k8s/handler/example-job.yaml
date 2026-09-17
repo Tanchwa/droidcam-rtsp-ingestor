@@ -1,0 +1,90 @@
+# A handler Job with literal values, for testing the image by hand without a
+# gateway hook in the loop. This is the k8s equivalent of the `uv run
+# droidcam-handler` snippet in the README.
+#
+# It is the job template with the placeholders filled in and MAX_FRAMES=3, so
+# it submits three frames and exits instead of running for five minutes.
+#
+#   # edit STREAM_URL and POOL_ENDPOINT below, then:
+#   kubectl apply -f k8s/handler/example-job.yaml
+#   kubectl -n droidcam logs -f job/droidcam-handler-manual
+#   kubectl -n droidcam delete job droidcam-handler-manual
+#
+# Exit codes: 0 completed, 1 the stream never produced frames, 2 misconfigured.
+#
+# Heads up: STREAM_URL usually points at a phone on your LAN. A pod cannot
+# reach that unless the cluster has a route to it -- on a remote cluster this
+# will fail with exit 1 no matter how correct the manifest is.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: droidcam-handler-manual
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/name: droidcam-handler
+    app.kubernetes.io/component: handler
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    droidcam.io/session-id: manual-test
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 360
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: droidcam-handler
+        app.kubernetes.io/component: handler
+        droidcam.io/session-id: manual-test
+    spec:
+      restartPolicy: Never
+      serviceAccountName: droidcam-handler
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: handler
+          image: docker.io/YOUR_DOCKERHUB_USERNAME/droidcam-handler:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: droidcam-handler-defaults
+            - secretRef:
+                name: droidcam-handler-secrets
+                optional: true
+          env:
+            - name: SESSION_ID
+              value: "manual-test"
+            # REPLACE: your phone's DroidCam address.
+            #   MJPEG: http://<phone-ip>:4747/video
+            #   RTSP:  rtsp://<phone-ip>:4747/
+            - name: STREAM_URL
+              value: "http://192.168.1.42:4747/video"
+            # REPLACE: an inference pool this pod can actually reach.
+            - name: POOL_ENDPOINT
+              value: "http://vlm-service.default.svc.cluster.local:8000"
+            # Three frames and out, so a manual test is short.
+            - name: MAX_FRAMES
+              value: "3"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

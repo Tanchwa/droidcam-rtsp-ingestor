@@ -1,0 +1,124 @@
+# The Job spec the llm-d router's gateway hook stamps out, once per session.
+#
+# This is a TEMPLATE, not a live object -- nothing here runs until the hook
+# reads it, substitutes the ${...} placeholders, and POSTs the result to the
+# API server. It lives in a ConfigMap so the shape of a handler pod is owned by
+# this repo (and reviewed like code) rather than hardcoded inside the hook.
+#
+# Placeholders the hook MUST fill:
+#   ${SESSION_ID}      from the caller's `x-llmd-session-id` header
+#   ${STREAM_URL}      from `x-droidcam-stream-url` / body `droidcam.stream_url`
+#   ${POOL_ENDPOINT}   the inference pool llm-d assigned this session to
+# Optional (fall back to droidcam-handler-defaults if the hook omits the
+# `env:` entry entirely -- do not substitute an empty string, that reads as
+# "unset" only for PROMPT and would set FRAME_INTERVAL to "" and crash):
+#   ${PROMPT}          body `droidcam.prompt`
+#   ${FRAME_INTERVAL}  body `droidcam.interval`
+#
+# Name length: SESSION_ID is `droidcam-<uuid>` (45 chars). With the `handler-`
+# prefix that is 53, and the Job adds a 6-char suffix to the pod name -- just
+# inside the 63-char DNS label limit. If you lengthen the prefix or the session
+# id format, check that budget again.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: droidcam-handler-job-template
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/name: droidcam-handler
+    app.kubernetes.io/component: handler
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+data:
+  job.yaml: |
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: handler-${SESSION_ID}
+      namespace: droidcam
+      labels:
+        app.kubernetes.io/name: droidcam-handler
+        app.kubernetes.io/component: handler
+        app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+        # Lets the hook (or a human) find and delete a session's handler:
+        #   kubectl -n droidcam delete job -l droidcam.io/session-id=<id>
+        droidcam.io/session-id: "${SESSION_ID}"
+    spec:
+      # Never retry. Exit 1 means the stream never produced a frame and exit 2
+      # means the config is wrong -- neither gets better on a second attempt,
+      # and the caller's token stream is already gone by then.
+      backoffLimit: 0
+      # Hard ceiling from the API server's side, independent of the handler's
+      # own MAX_SESSION_SECONDS (300). Keep this above it so a healthy session
+      # ends on its own backstop and reports a real exit code, and only a hung
+      # handler gets killed here.
+      activeDeadlineSeconds: 360
+      # Keep finished Jobs around briefly for log retrieval, then self-clean so
+      # a busy gateway does not accumulate thousands of Job objects.
+      ttlSecondsAfterFinished: 300
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: droidcam-handler
+            app.kubernetes.io/component: handler
+            app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+            droidcam.io/session-id: "${SESSION_ID}"
+        spec:
+          restartPolicy: Never
+          serviceAccountName: droidcam-handler
+          # The handler talks to no Kubernetes API -- it reads a camera stream
+          # and POSTs to a pool. It needs no token.
+          automountServiceAccountToken: false
+          # The worker handles SIGTERM and shuts the stream down cleanly.
+          terminationGracePeriodSeconds: 20
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: handler
+              # Pin to the SHA tag in production; `latest` here so the hook
+              # keeps working after a merge to main without a template edit.
+              image: docker.io/YOUR_DOCKERHUB_USERNAME/droidcam-handler:latest
+              imagePullPolicy: IfNotPresent
+              # No ports. Nothing connects to the handler; it only dials out.
+              envFrom:
+                - configMapRef:
+                    name: droidcam-handler-defaults
+                - secretRef:
+                    name: droidcam-handler-secrets
+                    optional: true
+              # `env` beats `envFrom`, so these override the defaults above.
+              env:
+                - name: SESSION_ID
+                  value: "${SESSION_ID}"
+                - name: STREAM_URL
+                  value: "${STREAM_URL}"
+                - name: POOL_ENDPOINT
+                  value: "${POOL_ENDPOINT}"
+                # Omit these two entirely if the user did not override them.
+                - name: PROMPT
+                  value: "${PROMPT}"
+                - name: FRAME_INTERVAL
+                  value: "${FRAME_INTERVAL}"
+              resources:
+                requests:
+                  # Decoding the stream and re-encoding JPEGs is the whole job.
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            # OpenCV and Python both want somewhere writable.
+            - name: tmp
+              emptyDir: {}

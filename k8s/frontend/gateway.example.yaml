@@ -1,0 +1,31 @@
+# OPTIONAL. Only apply this if you do not already have a Gateway to attach to.
+#
+# Check first:
+#   kubectl get gateways -A
+#   kubectl get gatewayclass
+#
+# We use agentgateway (https://agentgateway.dev) as the data plane. Its control
+# plane installs into `agentgateway-system` and registers a GatewayClass named
+# `agentgateway`; creating a Gateway with that class makes the control plane
+# provision the proxy Deployment + Service for it.
+#
+# If the agentgateway quickstart already left you a shared `agentgateway-proxy`
+# Gateway in `agentgateway-system`, delete this file and point the HTTPRoute's
+# parentRefs at that one instead (see the commented block in httproute.yaml).
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: droidcam-gateway
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+spec:
+  gatewayClassName: agentgateway
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: droidcam.example.com
+      allowedRoutes:
+        namespaces:
+          from: Same

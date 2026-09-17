@@ -1,0 +1,70 @@
+# Two unrelated identities live here. Do not conflate them:
+#
+#   droidcam-handler            -- the handler pods themselves. Deliberately
+#                                  has NO permissions; the pod spec also sets
+#                                  automountServiceAccountToken: false. The
+#                                  handler never touches the Kubernetes API.
+#
+#   droidcam-handler-provisioner -- the permission set the llm-d gateway hook
+#                                  needs in THIS namespace to read the job
+#                                  template and create/reap handler Jobs.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: droidcam-handler
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/name: droidcam-handler
+    app.kubernetes.io/component: handler
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: droidcam-handler-provisioner
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+rules:
+  # Read the Job template and the shared defaults.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  # Stamp out one Job per session, and reap it when the session ends.
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  # Observe handler pods and pull their logs for debugging a session.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  # Let the hook run handler Jobs as the (unprivileged) handler SA.
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get"]
+---
+# Grants the gateway hook those rights in the droidcam namespace only.
+#
+# EDIT THE SUBJECT. `llm-d-gateway-hook` / `llm-d` are placeholders -- set them
+# to whatever ServiceAccount your router's hook actually runs as. Find it with:
+#   kubectl -n llm-d get deploy -o jsonpath='{.items[*].spec.template.spec.serviceAccountName}{"\n"}'
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: droidcam-handler-provisioner
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: droidcam-handler-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: llm-d-gateway-hook
+    namespace: llm-d

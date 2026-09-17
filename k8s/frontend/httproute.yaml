@@ -1,0 +1,96 @@
+# External access via Gateway API, served by agentgateway (agentgateway.dev).
+#
+# Requires an existing Gateway with `gatewayClassName: agentgateway`. Two
+# options, pick one:
+#
+#   a) Attach to the shared proxy the agentgateway quickstart creates
+#      (`agentgateway-proxy` in `agentgateway-system`). That Gateway ships with
+#      `allowedRoutes.namespaces.from: All`, so this Route can attach across
+#      namespaces -- swap the parentRefs block below.
+#   b) Run a Gateway of our own: apply gateway.example.yaml first. That is what
+#      the parentRefs below assume.
+#
+# Check what already exists:
+#   kubectl get gateways -A
+#   kubectl get gatewayclass          # look for one named `agentgateway`
+#
+# Rules are NAMED so an AgentgatewayPolicy can target one of them by
+# `targetRefs.sectionName` (see the commented policy at the bottom).
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: droidcam-frontend
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+spec:
+  parentRefs:
+    - name: droidcam-gateway
+      namespace: droidcam
+      sectionName: http
+    # Shared-proxy alternative (option (a) above) -- use INSTEAD of the above:
+    # - name: agentgateway-proxy
+    #   namespace: agentgateway-system
+    #   sectionName: http
+  hostnames:
+    - droidcam.example.com
+  rules:
+    # WebSocket relay (/ws/inference). The connection stays open for the whole
+    # inference session -- potentially the full RESPONSE_TIMEOUT (600s, see
+    # configmap.yaml) -- so the request timeout is disabled. Per Gateway API,
+    # `request: 0s` means "no timeout"; agentgateway honours the standard
+    # HTTPRoute timeouts field natively.
+    #
+    # The HTTP/1.1 Upgrade handshake needs no extra config: agentgateway passes
+    # WebSocket upgrades through on an HTTP listener as-is.
+    - name: websocket
+      matches:
+        - path:
+            type: PathPrefix
+            value: /ws/
+      timeouts:
+        request: 0s
+      backendRefs:
+        - name: droidcam-frontend
+          port: 80
+
+    # UI, static assets, /healthz, /api/defaults. All short request/response.
+    - name: default
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+      timeouts:
+        request: 30s
+      backendRefs:
+        - name: droidcam-frontend
+          port: 80
+---
+# OPTIONAL. Only needed if WebSockets still get cut mid-session.
+#
+# `timeouts.request: 0s` above removes the per-request deadline, but the
+# connection can still be reaped by the proxy's HTTP/1 idle timeout, which is a
+# CONNECTION-level setting and so lives on an AgentgatewayPolicy targeting the
+# Gateway, not the Route. Frames flow every FRAME_INTERVAL (default 2.0s) and
+# tokens stream back continuously, so the connection should never look idle --
+# uncomment only if you see drops.
+#
+# Note the target is the Gateway, which means this applies to EVERY Route on
+# that Gateway. If you attached to a shared agentgateway-proxy, create this in
+# its namespace and be sure the value suits the other tenants too.
+#
+# apiVersion: agentgateway.dev/v1alpha1
+# kind: AgentgatewayPolicy
+# metadata:
+#   name: droidcam-frontend-idle
+#   namespace: droidcam
+# spec:
+#   targetRefs:
+#     - group: gateway.networking.k8s.io
+#       kind: Gateway
+#       name: droidcam-gateway
+#   frontend:
+#     http:
+#       http1IdleTimeout: 900s

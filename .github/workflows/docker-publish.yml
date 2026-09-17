@@ -1,8 +1,12 @@
-name: Build and publish image
+name: Build and publish images
 
-# GitOps: main is the source of truth. Every merge to main produces a
-# freshly built image pushed to Docker Hub, tagged with both `latest` and
-# the exact commit SHA so deployments can pin to an immutable reference.
+# GitOps: main is the source of truth. Every merge to main rebuilds both
+# components and pushes them to Docker Hub, tagged with `latest` and the exact
+# commit SHA so deployments can pin to an immutable reference.
+#
+# The frontend is a long-lived Deployment; the handler is a short-lived
+# workload the llm-d router's gateway hook creates per session. They version
+# together (one repo, one commit) but ship as separate images.
 on:
   push:
     branches: [main]
@@ -18,8 +22,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/droidcam-rtsp-ingestor
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: frontend
+            image: droidcam-frontend
+          - component: handler
+            image: droidcam-handler
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -37,7 +47,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
-          images: ${{ env.IMAGE }}
+          images: ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}
           tags: |
             type=raw,value=latest
             type=sha,format=long
@@ -45,9 +55,9 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
-          context: .
+          context: ${{ matrix.component }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}

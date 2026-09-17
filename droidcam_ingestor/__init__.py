@@ -1,1 +1,0 @@
-"""DroidCam RTSP → VLM ingestor."""

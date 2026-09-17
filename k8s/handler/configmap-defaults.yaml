@@ -1,0 +1,39 @@
+# Cluster-wide handler defaults. Mirrors handler/.env.example, minus the three
+# values that are per-session.
+#
+# SESSION_ID / STREAM_URL / POOL_ENDPOINT are NOT here -- they are injected per
+# session by the gateway hook as `env:` entries on the pod spec, which take
+# precedence over `envFrom`. Same for PROMPT and FRAME_INTERVAL when the user
+# overrides them in the UI; the values below are the fallbacks.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: droidcam-handler-defaults
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/name: droidcam-handler
+    app.kubernetes.io/component: handler
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+data:
+  # --- Pool request shape ---
+  POOL_CHAT_PATH: "/v1/chat/completions"
+  MODEL: "Qwen/Qwen3-VL-2B-Instruct"
+  TIMEOUT: "60"
+  PROMPT: "Describe what you see in this image."
+
+  # --- Frame sampling ---
+  FRAME_INTERVAL: "2.0"
+  JPEG_QUALITY: "80"
+  MAX_FRAME_EDGE: "1024"
+  STREAM_OPEN_TIMEOUT: "15"
+
+  # --- Backstops ---
+  # Nothing can reach the handler to stop it: "Stop" in the UI only closes the
+  # browser's token feed. These are the only things that end an orphaned
+  # handler, so never set MAX_SESSION_SECONDS to 0 in-cluster.
+  #
+  # Keep MAX_SESSION_SECONDS below the frontend's RESPONSE_TIMEOUT (600), and
+  # keep the Job's activeDeadlineSeconds above it -- see the job template.
+  MAX_SESSION_SECONDS: "300"
+  MAX_FRAMES: "0"
+  IDLE_TIMEOUT: "30"

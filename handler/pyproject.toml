@@ -1,0 +1,20 @@
+[project]
+name = "droidcam-handler"
+version = "0.1.0"
+description = "Short-lived RTSP handler: samples a DroidCam stream into an llm-d inference pool."
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.27",
+    "opencv-python-headless>=4.10",
+    "numpy>=2.1",
+]
+
+[project.scripts]
+droidcam-handler = "droidcam_handler.worker:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["droidcam_handler"]

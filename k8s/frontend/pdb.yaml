@@ -1,0 +1,16 @@
+# WebSocket sessions are pinned to whichever pod accepted them, so a drain that
+# takes both replicas at once kills every session in flight. Keep one up.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: droidcam-frontend
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: droidcam-frontend

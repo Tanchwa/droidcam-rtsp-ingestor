@@ -1,0 +1,117 @@
+# The long-lived half of the system: serves the UI and relays tokens over a
+# WebSocket. It never opens the DroidCam stream, so it needs no camera access,
+# no OpenCV, and no special egress beyond reaching the llm-d gateway.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: droidcam-frontend
+  namespace: droidcam
+  labels:
+    app.kubernetes.io/name: droidcam-frontend
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: droidcam-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: droidcam-frontend
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/part-of: droidcam-rtsp-ingestor
+    spec:
+      # Each WebSocket session lives entirely in one pod's memory, so an
+      # evicted pod kills whatever sessions it was relaying. Give in-flight
+      # sessions a couple of minutes to drain before SIGKILL. (A full session
+      # can run to RESPONSE_TIMEOUT=600s; waiting that long would make every
+      # rollout ten minutes, so this deliberately cuts long sessions short.)
+      terminationGracePeriodSeconds: 120
+      # The frontend talks to no Kubernetes API.
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      # Spread replicas so one node going away doesn't take every session.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: droidcam-frontend
+      containers:
+        - name: frontend
+          # Published by .github/workflows/docker-publish.yml on every push to
+          # main, tagged `latest` and `sha-<full-commit-sha>`. Pin to the SHA
+          # tag in anything you care about:
+          #   kubectl -n droidcam set image deploy/droidcam-frontend \
+          #     frontend=YOUR_DOCKERHUB_USERNAME/droidcam-frontend:sha-<sha>
+          image: docker.io/YOUR_DOCKERHUB_USERNAME/droidcam-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: droidcam-frontend-config
+            - secretRef:
+                name: droidcam-frontend-secrets
+                # Missing Secret is fine -- API_KEY defaults to "" (no auth).
+                optional: true
+          # /healthz is a pure local check: it returns the resolved gateway URL
+          # without dialing it. Gateway trouble therefore shows up in the UI,
+          # not as a restart loop here -- which is what we want, since a pod
+          # with live WebSocket sessions should not be killed over a flaky
+          # upstream.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              # No CPU limit on purpose: throttling a pod mid-relay stalls
+              # token delivery to every browser it is serving.
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        # readOnlyRootFilesystem: true, but Python still wants a writable /tmp.
+        - name: tmp
+          emptyDir: {}
