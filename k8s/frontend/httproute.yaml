@@ -29,7 +29,7 @@ metadata:
 spec:
   parentRefs:
     - name: cellphone-camera-gateway
-      namespace: cellphone-camera
+      namespace: cellphone-cam
       sectionName: https
     # Shared-proxy alternative (option (a) above) -- use INSTEAD of the above:
     # - name: agentgateway-proxy
