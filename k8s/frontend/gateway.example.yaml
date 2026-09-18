@@ -36,7 +36,6 @@ spec:
       service.beta.kubernetes.io/aws-load-balancer-type: external
       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
-      service.beta.kubernetes.io/aws-load-balancer-subnets: subnet-047477db1222b1051,subnet-00bdba6eabca58aaa,subnet-0c16a63c5c9cf8714
   listeners:
   - name: http
     protocol: HTTP
