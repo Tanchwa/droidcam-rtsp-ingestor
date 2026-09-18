@@ -46,15 +46,31 @@ rules:
     resources: ["serviceaccounts"]
     verbs: ["get"]
 ---
-# Grants the gateway hook those rights in the cellphone-camera namespace only.
+# Grants the EPP those rights in this namespace only.
 #
-# EDIT THE SUBJECT. `llm-d-gateway-hook` / `llm-d` are placeholders -- set them
-# to whatever ServiceAccount your router's hook actually runs as. Find it with:
-#   kubectl -n llm-d get deploy -o jsonpath='{.items[*].spec.template.spec.serviceAccountName}{"\n"}'
+# EDIT THE SUBJECT BELOW. It must name the ServiceAccount the llm-d Endpoint
+# Picker actually runs as -- BOTH the name and its namespace. The EPP generally
+# runs in a different namespace from this binding, and getting either field
+# wrong fails silently: Kubernetes matches subjects by name string, so a binding
+# naming a ServiceAccount that does not exist is stored without complaint and
+# grants nothing. No error, no event.
+#
+# Find the real values (search all namespaces -- the EPP's namespace varies by
+# install, e.g. llm-d-quickstart for the quickstart guide):
+#   kubectl get deploy -A -l llm-d.ai/igw-mode \
+#     -o custom-columns='NS:.metadata.namespace,DEPLOY:.metadata.name,SA:.spec.template.spec.serviceAccountName'
+#
+# Then VERIFY -- the binding existing proves nothing:
+#   SA=system:serviceaccount:<epp-ns>:<epp-sa>
+#   kubectl auth can-i create jobs --as=$SA -n cellphone-cam   # must be yes
+#   kubectl auth can-i create jobs --as=$SA -n default         # must be no
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: cellphone-camera-handler-provisioner
+  # No explicit namespace: ArgoCD applies this into its destination namespace
+  # (cellphone-cam). That namespace is what decides WHERE these permissions
+  # apply -- not the namespace the EPP runs in.
   labels:
     app.kubernetes.io/part-of: cellphone-camera-rtsp-ingestor
 roleRef:
@@ -63,5 +79,7 @@ roleRef:
   name: cellphone-camera-handler-provisioner
 subjects:
   - kind: ServiceAccount
-    name: llm-d-gateway-hook
-    namespace: llm-d
+    # Must match the EPP Deployment's serviceAccountName...
+    name: llm-d-quickstart-epp
+    # ...and the namespace that Deployment runs in.
+    namespace: llm-d-quickstart
