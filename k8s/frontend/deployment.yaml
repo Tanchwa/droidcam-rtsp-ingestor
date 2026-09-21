@@ -62,6 +62,15 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+          env:
+            # How the handler finds THIS pod. Each session's WebSocket lives in
+            # one replica's memory, so the trigger advertises this address and
+            # results come straight back here; the Service would balance them
+            # to a replica holding no socket for the session.
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           envFrom:
             - configMapRef:
                 name: cellphone-camera-frontend-config

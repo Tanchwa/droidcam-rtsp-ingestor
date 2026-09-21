@@ -1,9 +1,11 @@
 # Cluster-wide handler defaults. Mirrors handler/.env.example, minus the three
 # values that are per-session.
 #
-# SESSION_ID / STREAM_URL / POOL_ENDPOINT are NOT here -- they are injected per
-# session by the gateway hook as `env:` entries on the pod spec, which take
-# precedence over `envFrom`. Same for PROMPT and FRAME_INTERVAL when the user
+# SESSION_ID / STREAM_URL / POOL_ENDPOINT / RESULTS_CALLBACK_URL are NOT here --
+# they are injected per session by the gateway hook as `env:` entries on the pod
+# spec, which take precedence over `envFrom`. RESULTS_CALLBACK_URL in particular
+# could not live here even in principle: it names the frontend replica holding
+# that one session. Same for PROMPT and FRAME_INTERVAL when the user
 # overrides them in the UI; the values below are the fallbacks.
 apiVersion: v1
 kind: ConfigMap

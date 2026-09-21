@@ -31,7 +31,9 @@ log = logging.getLogger("cellphone-camera.handler")
 def _describe(settings: HandlerSettings) -> str:
     return (
         f"session={settings.session_id} stream={settings.stream_url} "
-        f"pool={settings.chat_url} model={settings.model} "
+        f"pool={settings.chat_url} "
+        f"callback={settings.results_callback_url or '(none -- output discarded)'} "
+        f"model={settings.model} "
         f"interval={settings.frame_interval}s "
         f"limits(max_session={settings.max_session_seconds}s "
         f"max_frames={settings.max_frames or 'unlimited'} "
@@ -89,12 +91,12 @@ async def run(settings: HandlerSettings, stop: asyncio.Event) -> int:
                     settings.jpeg_quality,
                     settings.max_frame_edge,
                 )
-                drained = await pool.submit_frame(jpeg, frames)
+                forwarded = await pool.submit_frame(jpeg, frames)
                 log.info(
-                    "frame %d submitted (%d B jpeg, %d B response drained)",
+                    "frame %d submitted (%d B jpeg, %d B response forwarded)",
                     frames,
                     len(jpeg),
-                    drained or 0,
+                    forwarded or 0,
                 )
             except Exception as exc:
                 # One bad frame or a transient pool error should not kill the
@@ -106,6 +108,9 @@ async def run(settings: HandlerSettings, stop: asyncio.Event) -> int:
             except asyncio.TimeoutError:
                 pass
     finally:
+        # Signal the end before tearing the client down: the caller has no
+        # other way to learn this session is over.
+        await pool.end_session()
         await pool.aclose()
         await loop.run_in_executor(None, grabber.stop)
 

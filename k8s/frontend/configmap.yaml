@@ -24,7 +24,9 @@ data:
   # comfortably above the handler's MAX_SESSION_SECONDS (default 300), or
   # tokens stop reaching the browser while the handler is still submitting
   # frames. See k8s/handler/configmap-defaults.yaml.
-  RESPONSE_TIMEOUT: "600"
+  # Bounds the trigger request only; results arrive separately at /ingest,
+  # so this no longer caps how long a session may run.
+  RESPONSE_TIMEOUT: "60"
 
   # --- UI defaults (the browser can override both) ---
   PROMPT: "Describe what you see in this image."

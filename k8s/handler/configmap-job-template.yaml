@@ -14,6 +14,15 @@
 # "unset" only for PROMPT and would set FRAME_INTERVAL to "" and crash):
 #   ${PROMPT}          body `cellphone-camera.prompt`
 #   ${FRAME_INTERVAL}  body `cellphone-camera.interval`
+#   ${RESULTS_CALLBACK_URL}
+#                      where the handler POSTs the model's output so it reaches
+#                      the caller. From the trigger's
+#                      `x-cellphone-camera-results-callback` header -- the
+#                      frontend replica holding that session's WebSocket -- with
+#                      the session id appended by the hook. Omitted when the
+#                      caller named no callback and the hook has no configured
+#                      fallback, in which case the handler drains the model's
+#                      output and the browser sees nothing.
 #
 # Name length: SESSION_ID is `cellphone-camera-<uuid>` (45 chars). With the `handler-`
 # prefix that is 53, and the Job adds a 6-char suffix to the pod name -- just
@@ -96,6 +105,10 @@ data:
                   value: "${STREAM_URL}"
                 - name: POOL_ENDPOINT
                   value: "${POOL_ENDPOINT}"
+                # The return path: without this the handler has nowhere to send
+                # the model's output and the session produces nothing visible.
+                - name: RESULTS_CALLBACK_URL
+                  value: "${RESULTS_CALLBACK_URL}"
                 # Omit these two entirely if the user did not override them.
                 - name: PROMPT
                   value: "${PROMPT}"

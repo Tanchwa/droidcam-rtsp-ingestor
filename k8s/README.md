@@ -166,5 +166,7 @@ here can fix that; it needs the camera and the cluster on a routable network.
 
 No NetworkPolicy ships here, because the handler's egress is by definition
 arbitrary user-supplied addresses. If your cluster default-denies egress, the
-handler needs an allowance for the camera ranges you intend to support and for
-its assigned `POOL_ENDPOINT`.
+handler needs an allowance for the camera ranges you intend to support, for its
+assigned `POOL_ENDPOINT`, and for the frontend pods on 8080 -- that last one is
+the results callback, and without it handler pods run to completion while the
+browser shows nothing.

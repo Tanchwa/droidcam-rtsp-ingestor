@@ -4,7 +4,8 @@ The handler is provisioned by the llm-d router's gateway hook, so every value
 below arrives as an env var on the pod spec -- there is no config file, no API
 the handler listens on, and no Kubernetes client. ``STREAM_URL`` (the cellphone camera
 address the user typed into the UI) and ``POOL_ENDPOINT`` (the inference pool
-llm-d assigned the session to) are the two the hook must always inject.
+llm-d assigned the session to) are the two the hook must always inject, and
+``RESULTS_CALLBACK_URL`` is the return path it should inject alongside them.
 """
 
 from __future__ import annotations
@@ -39,6 +40,16 @@ class HandlerSettings:
     stream_url: str = field(default_factory=lambda: _required("STREAM_URL"))
     # The specific inference pool endpoint llm-d assigned this session to.
     pool_endpoint: str = field(default_factory=lambda: _required("POOL_ENDPOINT"))
+    # Where to POST the model's output so it reaches whoever started this
+    # session -- already session-scoped, the hook appended the session id.
+    #
+    # Optional, but a session without it is a session nobody sees: the handler
+    # posts frames straight to the assigned pod, so the gateway never observes
+    # the response and cannot relay it. Empty means drain the output and drop
+    # it, which is only useful for load tests.
+    results_callback_url: str = field(
+        default_factory=lambda: _env("RESULTS_CALLBACK_URL", "")
+    )
 
     prompt: str = field(
         default_factory=lambda: _env("PROMPT", "Describe what you see in this image.")

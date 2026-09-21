@@ -40,6 +40,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
 USER app
 
 # No port: the handler is a worker. Nothing connects to it; it dials out to the
-# inference pool and exits. SESSION_ID / STREAM_URL / POOL_ENDPOINT are
-# injected per session by the llm-d gateway hook.
+# inference pool, forwards each response to RESULTS_CALLBACK_URL, and exits.
+# SESSION_ID / STREAM_URL / POOL_ENDPOINT / RESULTS_CALLBACK_URL are injected
+# per session by the llm-d gateway hook.
 ENTRYPOINT ["cellphone-camera-handler"]

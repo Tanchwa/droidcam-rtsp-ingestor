@@ -66,6 +66,13 @@
 #            # REPLACE: an inference pool this pod can actually reach.
 #            - name: POOL_ENDPOINT
 #              value: "http://vlm-service.default.svc.cluster.local:8000"
+#            # Where the model's output goes. Omit it and the handler drains
+#            # the output and drops it -- the pod still reports success, so a
+#            # manual test that leaves this out proves less than it looks.
+#            # A frontend pod IP is what the hook would inject; the Service
+#            # works here only because a manual test has no WebSocket to match.
+#            - name: RESULTS_CALLBACK_URL
+#              value: "http://cellphone-camera-frontend:8080/ingest/manual-test"
 #            # Three frames and out, so a manual test is short.
 #            - name: MAX_FRAMES
 #              value: "3"
